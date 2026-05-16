@@ -478,11 +478,184 @@ public class ComplexExample {
 }`
       }
     },
+    cpp: {
+      security: {
+        name: "Security Issues",
+        code: `#include <iostream>
+#include <cstring>
+using namespace std;
+
+int main() {
+    // Hardcoded credentials
+    char password[] = "admin123";
+    char apiKey[] = "sk-1234567890";
+    
+    // Buffer overflow risk
+    char buffer[10];
+    char input[100];
+    cin >> input;
+    strcpy(buffer, input);  // Unsafe copy
+    
+    cout << "Password: " << password << endl;
+    return 0;
+}`
+      },
+      style: {
+        name: "Style Issues",
+        code: `#include <iostream>
+using namespace std;
+
+int calculateTotal(int items[], int size) {
+    int total = 0;
+    for (int i = 0; i < size; i++) {
+        total += items[i];
+    }
+    cout << total << endl;  // Should use proper output
+    return total;
+}
+
+void anotherFunctionWithAVeryLongNameThatExceedsTheRecommendedLineLengthLimitForCPlusPlus(int param1, int param2) {
+    // Function body
+}`
+      },
+      bestPractices: {
+        name: "Best Practices",
+        code: `#include <iostream>
+using namespace std;
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int divide(int x, int y) {
+    // No error checking for division by zero
+    return x / y;
+}
+
+void processData(int data[], int size) {
+    int* result = new int[size];
+    for (int i = 0; i < size; i++) {
+        result[i] = data[i] * 2;
+    }
+    // Memory leak - no delete[]
+}`
+      },
+      syntaxError: {
+        name: "Syntax Error",
+        code: `int main() {
+    char op;
+    double num1, num2;
+
+    cout << "Enter operator (+, -, *, /): ";
+    cin >> op;
+
+    cout << "Enter two numbers: ";
+    cin >> num1 >> num2;
+
+    switch(op) {
+        case '+':
+            cout << "Result = " << num1 + num2;
+            break;
+
+        case '-':
+            cout << "Result = " << num1 - num2;
+            break;
+
+        case '*':
+            cout << "Result = " << num1 * num2;
+            break;
+
+        case '/':
+            if(num2 != 0)
+                cout << "Result = " << num1 /;
+            else
+                cou << "Error! Division by zero.";
+            break;
+
+        default:
+            cout << "Invalid operator!";
+    }
+
+    return 0;
+}`
+      },
+      clean: {
+        name: "Clean Code",
+        code: `#include <iostream>
+#include <vector>
+using namespace std;
+
+/**
+ * Calculate the sum of a vector of numbers
+ * @param numbers Vector of integers to sum
+ * @return The sum of all numbers
+ */
+int calculateSum(const vector<int>& numbers) {
+    int sum = 0;
+    for (int num : numbers) {
+        sum += num;
+    }
+    return sum;
+}
+
+/**
+ * Greet a user by name
+ * @param name The user's name
+ * @return A greeting message
+ */
+string greet(const string& name) {
+    return "Hello, " + name + "!";
+}
+
+int main() {
+    vector<int> nums = {1, 2, 3, 4, 5};
+    cout << "Sum: " << calculateSum(nums) << endl;
+    cout << greet("World") << endl;
+    return 0;
+}`
+      },
+      complex: {
+        name: "Complex Example",
+        code: `#include <iostream>
+#include <fstream>
+#include <cstring>
+using namespace std;
+
+int main() {
+    // Multiple issues
+    char password[] = "secret123";  // Hardcoded
+    
+    char buffer[50];
+    char input[200];
+    
+    cout << "Enter data: ";
+    cin >> input;
+    strcpy(buffer, input);  // Buffer overflow
+    
+    // Missing error checking
+    ifstream file("data.txt");
+    string line;
+    getline(file, line);
+    
+    // No validation
+    int value = stoi(line);
+    int result = 100 / value;  // Potential division by zero
+    
+    cout << "Result: " << result << endl;
+    
+    // Memory leak
+    int* data = new int[100];
+    // No delete[]
+    
+    return 0;
+}`
+      }
+    },
     other: {
       security: {
         name: "Security Issues",
         code: `// Generic code example
-// This analyzer works best with Python, JavaScript, and Java
+// This analyzer works best with Python, JavaScript, Java, and C++
 
 function example() {
     const password = "hardcoded123";
@@ -613,6 +786,7 @@ function example() {
                 <option value="python">Python</option>
                 <option value="javascript">JavaScript</option>
                 <option value="java">Java</option>
+                <option value="cpp">C++</option>
                 <option value="other">Other</option>
               </select>
               <div className="example-dropdown">

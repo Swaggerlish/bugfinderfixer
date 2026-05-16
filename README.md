@@ -78,6 +78,30 @@ npm start
 
 Frontend will open at: http://localhost:3000
 
+## ☁️ IBM watsonx Cloud Integration
+
+This repo includes support for IBM watsonx in the backend. To enable it, set the following environment variables in your backend environment:
+
+```bash
+USE_AI_ANALYZER=true
+WATSONX_API_KEY=<your-ibm-watsonx-api-key>
+WATSONX_PROJECT_ID=<your-watsonx-project-id>
+WATSONX_URL=<your-watsonx-service-url>
+WATSONX_MODEL=ibm/granite-20b-code-instruct-v2
+```
+
+With these settings, the backend will route analysis through IBM watsonx and use a code-specialized model for more accurate bug fixing.
+
+### Other API Options
+
+If you want to replace or extend the AI integration, the backend is designed to support additional analysis APIs. You can swap in a different analyzer by updating `backend/routers/analyze.py` and implementing the analyzer interface in `backend/services/`.
+
+Common API integrations include:
+- IBM watsonx
+- OpenAI GPT models
+- Anthropic Claude
+- Any custom web API that returns structured analysis results
+
 ## 📁 Project Structure
 
 ```

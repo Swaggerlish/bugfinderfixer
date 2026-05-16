@@ -20,6 +20,20 @@ class CodeAnalyzerService(BaseCodeAnalyzer):
     Rule-based code analyzer implementation.
     Implements BaseCodeAnalyzer interface for easy replacement with AI-based analyzers.
     """
+
+    LANGUAGE_ALIASES = {
+        "py": "python",
+        "python3": "python",
+        "js": "javascript",
+        "jsx": "javascript",
+        "ts": "javascript",
+        "java": "java",
+        "c++": "cpp",
+        "cpp": "cpp",
+        "c": "cpp",
+        "other": "generic",
+        "text": "generic",
+    }
     
     def __init__(self):
         self.security_patterns = {
@@ -50,10 +64,28 @@ class CodeAnalyzerService(BaseCodeAnalyzer):
         Returns:
             Dictionary with analysis results including issues, suggestions, and fixed code
         """
-        if language.lower() == "python":
-            return self._analyze_python(code)
+        language = self._normalize_language(language)
+        if language == "python":
+            result = self._analyze_python(code)
+        elif language == "cpp":
+            result = self._analyze_cpp(code)
+        elif language == "java":
+            result = self._analyze_java(code)
+        elif language == "javascript":
+            result = self._analyze_javascript(code)
         else:
-            return self._analyze_generic(code)
+            result = self._analyze_generic(code)
+
+        result["normalized_language"] = language
+        return result
+
+    def _normalize_language(self, language: str) -> str:
+        """Normalize incoming language values to supported analyzer values."""
+        if not language:
+            return "generic"
+        normalized = language.strip().lower()
+        normalized = normalized.replace(" ", "")
+        return self.LANGUAGE_ALIASES.get(normalized, normalized)
     
     def _analyze_python(self, code: str) -> Dict:
         """Comprehensive Python code analysis."""
@@ -503,6 +535,286 @@ class CodeAnalyzerService(BaseCodeAnalyzer):
             "fixed_code": None if has_syntax_errors else fixed_code,
             "has_syntax_errors": has_syntax_errors
         }
+    
+    def _analyze_cpp(self, code: str) -> Dict:
+        """Comprehensive C++ code analysis."""
+        issues_list: List[Issue] = []
+        lines = code.split('\n')
+        
+        # Check for missing includes
+        has_iostream = '#include <iostream>' in code or '#include<iostream>' in code
+        has_using_std = 'using namespace std' in code
+        uses_cout = 'cout' in code
+        uses_cin = 'cin' in code
+        
+        if (uses_cout or uses_cin) and not has_iostream:
+            issues_list.append(Issue(
+                type="syntax",
+                severity="critical",
+                line=1,
+                message="Missing #include <iostream>",
+                suggestion="Add #include <iostream> at the beginning",
+                original_code=None,
+                fixed_code="#include <iostream>"
+            ))
+        
+        if (uses_cout or uses_cin) and not has_using_std and 'std::' not in code:
+            issues_list.append(Issue(
+                type="syntax",
+                severity="critical",
+                line=2,
+                message="Missing 'using namespace std;' or 'std::' prefix",
+                suggestion="Add 'using namespace std;' after includes or use std::cout",
+                original_code=None,
+                fixed_code="using namespace std;"
+            ))
+        
+        # Check each line for common C++ errors
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            
+            # Check for incomplete expressions (operators without operands)
+            if re.search(r'[+\-*/]\s*;', stripped):
+                issues_list.append(Issue(
+                    type="syntax",
+                    severity="critical",
+                    line=i,
+                    message="Incomplete expression: operator without right operand",
+                    suggestion="Complete the expression with the missing operand",
+                    original_code=line,
+                    fixed_code=self._fix_incomplete_expression(line)
+                ))
+            
+            # Check for typos in common keywords
+            typo_fixes = {
+                r'\bcou\b': 'cout',
+                r'\bcin\b(?![\w])': 'cin',
+                r'\bstd\b(?=\s*<<)': 'std',
+                r'\breaurn\b': 'return',
+                r'\binclude\b(?!\s*<)': '#include',
+            }
+            
+            for pattern, correct in typo_fixes.items():
+                if re.search(pattern, stripped):
+                    issues_list.append(Issue(
+                        type="syntax",
+                        severity="critical",
+                        line=i,
+                        message=f"Typo detected: should be '{correct}'",
+                        suggestion=f"Replace with correct keyword '{correct}'",
+                        original_code=line,
+                        fixed_code=re.sub(pattern, correct, line)
+                    ))
+            
+            # Check for missing semicolons (common in C++)
+            if stripped and not stripped.startswith('//') and not stripped.startswith('#'):
+                if re.match(r'^(int|double|float|char|string|bool|void)\s+\w+\s*=', stripped):
+                    if not stripped.rstrip().endswith(';') and not stripped.rstrip().endswith('{'):
+                        issues_list.append(Issue(
+                            type="syntax",
+                            severity="critical",
+                            line=i,
+                            message="Missing semicolon at end of statement",
+                            suggestion="Add semicolon at the end",
+                            original_code=line,
+                            fixed_code=line.rstrip() + ';'
+                        ))
+        
+        # Generate fixed code
+        fixed_code = self._generate_cpp_fixed_code(code, issues_list)
+        
+        return self._format_response(issues_list, fixed_code, has_syntax_errors=bool(issues_list))
+    
+    def _analyze_java(self, code: str) -> Dict:
+        """Comprehensive Java code analysis."""
+        issues_list: List[Issue] = []
+        lines = code.split('\n')
+        
+        # Check for missing imports
+        uses_scanner = 'Scanner' in code
+        uses_arraylist = 'ArrayList' in code
+        
+        if uses_scanner and 'import java.util.Scanner' not in code:
+            issues_list.append(Issue(
+                type="syntax",
+                severity="critical",
+                line=1,
+                message="Missing import for Scanner",
+                suggestion="Add 'import java.util.Scanner;'",
+                original_code=None,
+                fixed_code="import java.util.Scanner;"
+            ))
+        
+        if uses_arraylist and 'import java.util.ArrayList' not in code:
+            issues_list.append(Issue(
+                type="syntax",
+                severity="critical",
+                line=1,
+                message="Missing import for ArrayList",
+                suggestion="Add 'import java.util.ArrayList;'",
+                original_code=None,
+                fixed_code="import java.util.ArrayList;"
+            ))
+        
+        # Check each line for common Java errors
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            
+            # Check for incomplete expressions
+            if re.search(r'[+\-*/]\s*;', stripped):
+                issues_list.append(Issue(
+                    type="syntax",
+                    severity="critical",
+                    line=i,
+                    message="Incomplete expression: operator without right operand",
+                    suggestion="Complete the expression",
+                    original_code=line,
+                    fixed_code=self._fix_incomplete_expression(line)
+                ))
+            
+            # Check for typos in common keywords
+            typo_fixes = {
+                r'\bSytem\b': 'System',
+                r'\bprintl\b': 'println',
+                r'\bpubilc\b': 'public',
+                r'\bprivte\b': 'private',
+                r'\breaurn\b': 'return',
+                r'\bmport\b': 'import',
+            }
+            
+            for pattern, correct in typo_fixes.items():
+                if re.search(pattern, stripped):
+                    issues_list.append(Issue(
+                        type="syntax",
+                        severity="critical",
+                        line=i,
+                        message=f"Typo detected: should be '{correct}'",
+                        suggestion=f"Replace with correct keyword '{correct}'",
+                        original_code=line,
+                        fixed_code=re.sub(pattern, correct, line)
+                    ))
+        
+        fixed_code = self._generate_java_fixed_code(code, issues_list)
+        return self._format_response(issues_list, fixed_code, has_syntax_errors=bool(issues_list))
+    
+    def _analyze_javascript(self, code: str) -> Dict:
+        """Comprehensive JavaScript code analysis."""
+        issues_list: List[Issue] = []
+        lines = code.split('\n')
+        
+        # Check each line for common JavaScript errors
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            
+            # Check for incomplete expressions
+            if re.search(r'[+\-*/]\s*;', stripped):
+                issues_list.append(Issue(
+                    type="syntax",
+                    severity="critical",
+                    line=i,
+                    message="Incomplete expression: operator without right operand",
+                    suggestion="Complete the expression",
+                    original_code=line,
+                    fixed_code=self._fix_incomplete_expression(line)
+                ))
+            
+            # Check for typos in common keywords
+            typo_fixes = {
+                r'\bconsoel\b': 'console',
+                r'\bfunciton\b': 'function',
+                r'\breaurn\b': 'return',
+                r'\bconst\s+\w+\s*=\s*$': 'const variable = value;',
+            }
+            
+            for pattern, correct in typo_fixes.items():
+                if re.search(pattern, stripped):
+                    issues_list.append(Issue(
+                        type="syntax",
+                        severity="critical",
+                        line=i,
+                        message=f"Typo detected: should be '{correct}'",
+                        suggestion=f"Replace with correct keyword '{correct}'",
+                        original_code=line,
+                        fixed_code=re.sub(pattern, correct, line)
+                    ))
+        
+        fixed_code = self._generate_js_fixed_code(code, issues_list)
+        return self._format_response(issues_list, fixed_code, has_syntax_errors=bool(issues_list))
+    
+    def _fix_incomplete_expression(self, line: str) -> str:
+        """Fix incomplete expressions like 'num1 /' by adding a placeholder."""
+        # Find the incomplete operator
+        match = re.search(r'(\w+)\s*([+\-*/])\s*;', line)
+        if match:
+            var_name = match.group(1)
+            operator = match.group(2)
+            # Replace with completed expression
+            return re.sub(r'([+\-*/])\s*;', r'\1 operand;  // TODO: Add the missing operand', line)
+        return line
+    
+    def _generate_cpp_fixed_code(self, code: str, issues: List[Issue]) -> str:
+        """Generate fixed C++ code."""
+        lines = code.split('\n')
+        fixed_lines = []
+        
+        # Add missing includes at the beginning
+        needs_iostream = any('Missing #include <iostream>' in issue.message for issue in issues)
+        needs_using = any('using namespace std' in issue.message for issue in issues)
+        
+        if needs_iostream:
+            fixed_lines.append('#include <iostream>')
+        if needs_using:
+            fixed_lines.append('using namespace std;')
+        if needs_iostream or needs_using:
+            fixed_lines.append('')
+        
+        # Process each line
+        for i, line in enumerate(lines, 1):
+            # Find issues for this line
+            line_issues = [issue for issue in issues if issue.line == i and issue.fixed_code]
+            
+            if line_issues:
+                # Use the fixed code from the first applicable issue
+                fixed_lines.append(line_issues[0].fixed_code)
+            else:
+                fixed_lines.append(line)
+        
+        return '\n'.join(fixed_lines)
+    
+    def _generate_java_fixed_code(self, code: str, issues: List[Issue]) -> str:
+        """Generate fixed Java code."""
+        lines = code.split('\n')
+        fixed_lines = []
+        
+        # Add missing imports at the beginning
+        missing_imports = [issue.fixed_code for issue in issues if issue.line == 1 and 'import' in issue.message]
+        if missing_imports:
+            fixed_lines.extend(missing_imports)
+            fixed_lines.append('')
+        
+        # Process each line
+        for i, line in enumerate(lines, 1):
+            line_issues = [issue for issue in issues if issue.line == i and issue.fixed_code]
+            if line_issues:
+                fixed_lines.append(line_issues[0].fixed_code)
+            else:
+                fixed_lines.append(line)
+        
+        return '\n'.join(fixed_lines)
+    
+    def _generate_js_fixed_code(self, code: str, issues: List[Issue]) -> str:
+        """Generate fixed JavaScript code."""
+        lines = code.split('\n')
+        fixed_lines = []
+        
+        for i, line in enumerate(lines, 1):
+            line_issues = [issue for issue in issues if issue.line == i and issue.fixed_code]
+            if line_issues:
+                fixed_lines.append(line_issues[0].fixed_code)
+            else:
+                fixed_lines.append(line)
+        
+        return '\n'.join(fixed_lines)
     
     def _analyze_generic(self, code: str) -> Dict:
         """Basic analysis for non-Python languages."""
