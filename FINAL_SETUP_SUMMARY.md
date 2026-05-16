@@ -157,7 +157,7 @@ USE_AI_ANALYZER=true  # Change from false
 Environment variables:
 ```
 USE_AI_ANALYZER=true
-WATSONX_API_KEY=0bSea7yp0c_BVaPB8qpbdX9GbysP5UR6afMKEUr-ov3S
+WATSONX_API_KEY=apikey
 WATSONX_PROJECT_ID=2972648-watsonx
 WATSONX_URL=https://eu-de.ml.cloud.ibm.com
 WATSONX_MODEL=ibm/granite-13b-chat-v2
