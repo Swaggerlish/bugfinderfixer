@@ -1,0 +1,292 @@
+/* Inline Suggestion Component - GitHub Style */
+
+.inline-suggestion {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: white;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.inline-suggestion.severity-critical {
+  border-left: 4px solid #e74c3c;
+}
+
+.inline-suggestion.severity-warning {
+  border-left: 4px solid #f39c12;
+}
+
+.inline-suggestion.severity-info {
+  border-left: 4px solid #3498db;
+}
+
+.inline-suggestion.accepted {
+  background: #f0f9ff;
+  border-color: #27ae60;
+}
+
+.inline-suggestion.rejected {
+  background: #fafafa;
+  opacity: 0.7;
+}
+
+/* Header */
+.suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  cursor: pointer;
+  user-select: none;
+}
+
+.suggestion-header:hover {
+  background: #e9ecef;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.severity-icon {
+  font-size: 18px;
+}
+
+.line-number {
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.severity-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #ecf0f1;
+  color: #7f8c8d;
+}
+
+.severity-critical .severity-badge {
+  background: #fadbd8;
+  color: #c0392b;
+}
+
+.severity-warning .severity-badge {
+  background: #fef5e7;
+  color: #d68910;
+}
+
+.severity-info .severity-badge {
+  background: #d6eaf8;
+  color: #2874a6;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.accepted {
+  background: #d5f4e6;
+  color: #27ae60;
+}
+
+.status-badge.rejected {
+  background: #fadbd8;
+  color: #e74c3c;
+}
+
+.expand-toggle {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #7f8c8d;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: transform 0.2s;
+}
+
+.expand-toggle:hover {
+  color: #2c3e50;
+}
+
+/* Body */
+.suggestion-body {
+  padding: 16px;
+}
+
+.issue-message {
+  margin-bottom: 16px;
+  color: #2c3e50;
+  line-height: 1.6;
+}
+
+/* Code Diff - GitHub Style */
+.code-diff {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.diff-section {
+  position: relative;
+}
+
+.diff-section.removed {
+  background: #ffeef0;
+}
+
+.diff-section.added {
+  background: #e6ffed;
+}
+
+.diff-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.diff-section.removed .diff-header {
+  background: #ffdce0;
+  color: #c0392b;
+}
+
+.diff-section.added .diff-header {
+  background: #cdffd8;
+  color: #27ae60;
+}
+
+.diff-icon {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.diff-code {
+  margin: 0;
+  padding: 12px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+  color: #2c3e50;
+}
+
+.diff-section.removed .diff-code {
+  background: #ffeef0;
+  color: #c0392b;
+}
+
+.diff-section.added .diff-code {
+  background: #e6ffed;
+  color: #22863a;
+}
+
+/* Actions */
+.suggestion-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-accept,
+.btn-reject {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-accept {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-accept:hover {
+  background: #229954;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+}
+
+.btn-reject {
+  background: #ecf0f1;
+  color: #7f8c8d;
+}
+
+.btn-reject:hover {
+  background: #bdc3c7;
+  color: #2c3e50;
+}
+
+/* Status Messages */
+.status-message {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+.status-message.accepted {
+  background: #d5f4e6;
+  color: #27ae60;
+  border-left: 4px solid #27ae60;
+}
+
+.status-message.rejected {
+  background: #fadbd8;
+  color: #e74c3c;
+  border-left: 4px solid #e74c3c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .suggestion-header {
+    padding: 10px 12px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .suggestion-body {
+    padding: 12px;
+  }
+
+  .suggestion-actions {
+    flex-direction: column;
+  }
+
+  .btn-accept,
+  .btn-reject {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .diff-code {
+    font-size: 12px;
+  }
+}
+
+/* Made with Bob */
