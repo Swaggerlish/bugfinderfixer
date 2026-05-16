@@ -144,10 +144,12 @@ export const getApiInfo = async () => {
   }
 };
 
-export default {
+const apiService = {
   analyzeCode,
   checkApiHealth,
   getApiInfo,
 };
+
+export default apiService;
 
 // Made with Bob
