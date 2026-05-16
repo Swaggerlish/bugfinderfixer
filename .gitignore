@@ -266,7 +266,6 @@ $RECYCLE.BIN/
 # ============================================
 
 # Bob AI sessions (if you want to exclude them)
-bob_sessions/
 
 # Batch files (optional - uncomment if you don't want to track them)
 # *.bat
