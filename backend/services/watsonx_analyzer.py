@@ -48,11 +48,12 @@ class WatsonxCodeAnalyzer(BaseCodeAnalyzer):
                     model_id=self.model_id,
                     params={
                         GenParams.DECODING_METHOD: "greedy",
-                        GenParams.MAX_NEW_TOKENS: 2000,
-                        GenParams.MIN_NEW_TOKENS: 1,
-                        GenParams.TEMPERATURE: 0.0,
+                        GenParams.MAX_NEW_TOKENS: 3000,
+                        GenParams.MIN_NEW_TOKENS: 50,
+                        GenParams.TEMPERATURE: 0.1,
                         GenParams.TOP_K: 50,
-                        GenParams.TOP_P: 1
+                        GenParams.TOP_P: 0.95,
+                        GenParams.REPETITION_PENALTY: 1.1
                     },
                     credentials={
                         "apikey": self.api_key,
@@ -110,50 +111,143 @@ class WatsonxCodeAnalyzer(BaseCodeAnalyzer):
         """Create a detailed prompt for code analysis."""
         prompt_language = language if language != "generic" else "plain text"
         fenced_language = language if language != "generic" else ""
-        prompt = f"""You are an expert code analyzer and fixer. Analyze this {prompt_language} code and fix ALL errors.
+        
+        # Language-specific syntax rules
+        language_rules = {
+            "python": """
+PYTHON-SPECIFIC RULES:
+- No semicolons needed at end of lines
+- Indentation is critical (use 4 spaces)
+- Use 'import' for modules, not 'include'
+- Common functions: print(), len(), range(), input()
+- No curly braces for blocks, use indentation""",
+            "cpp": """
+C++ SPECIFIC RULES:
+- Every statement needs semicolon (;)
+- Use #include for headers (e.g., #include <iostream>)
+- Use 'cout' for output, 'cin' for input
+- Need 'using namespace std;' or 'std::' prefix
+- Curly braces {} for blocks
+- Main function: int main() { ... return 0; }""",
+            "java": """
+JAVA SPECIFIC RULES:
+- Every statement needs semicolon (;)
+- Use 'import' for packages (e.g., import java.util.Scanner;)
+- Use 'System.out.println()' for output
+- Class names start with capital letter
+- Main method: public static void main(String[] args)
+- Curly braces {} for blocks""",
+            "javascript": """
+JAVASCRIPT SPECIFIC RULES:
+- Semicolons recommended but optional
+- Use 'console.log()' for output
+- Variable declarations: let, const, var
+- No type declarations needed
+- Curly braces {} for blocks
+- Functions: function name() {} or () => {}""",
+            "c": """
+C SPECIFIC RULES:
+- Every statement needs semicolon (;)
+- Use #include for headers (e.g., #include <stdio.h>)
+- Use 'printf()' for output, 'scanf()' for input
+- Curly braces {} for blocks
+- Main function: int main() { ... return 0; }"""
+        }
+        
+        lang_specific = language_rules.get(language.lower(), "")
+        
+        prompt = f"""You are an expert {prompt_language} programmer and code analyzer.
 
-CODE WITH ERRORS:
+LANGUAGE: {prompt_language.upper()}
+{lang_specific}
+
+CODE TO ANALYZE:
 ```{fenced_language}
 {code}
 ```
 
-TASK:
-1. Find ALL errors (typos, syntax, logic, missing imports)
-2. For each error, provide the EXACT fix
-3. Generate COMPLETE corrected code
+CRITICAL: This is {prompt_language.upper()} code. Apply {prompt_language.upper()}-specific syntax rules ONLY.
 
-EXAMPLE for Java:
-If you see: mport java.util.Scanner;
-Fix to: import java.util.Scanner;
+ANALYSIS TASKS:
+1. Verify this is valid {prompt_language.upper()} syntax
+2. Find ALL errors specific to {prompt_language.upper()}:
+   - Syntax errors (missing semicolons in C++/Java/C, wrong indentation in Python)
+   - Typos in {prompt_language.upper()} keywords
+   - Missing {prompt_language.upper()}-specific imports/includes
+   - Incomplete expressions
+   - Logic errors (division by zero, null pointers, array bounds)
+   - Runtime errors (type mismatches, undefined variables, index errors)
+   - Type mismatches
 
-If you see: cou << "Hello";
-Fix to: cout << "Hello";
+3. For EACH error found:
+   - Line number
+   - Original buggy code
+   - Corrected code
+   - PLAIN LANGUAGE explanation (explain like teaching a beginner)
+   - What would happen at runtime if not fixed
 
-RESPOND IN JSON:
+4. Generate COMPLETE fixed {prompt_language.upper()} code
+
+RESPONSE FORMAT (JSON only):
 {{
   "issues": {{
     "syntax_errors": [
       {{
-        "line": 1,
+        "line": <number>,
         "severity": "critical",
-        "message": "Typo: 'mport' should be 'import'",
-        "original_code": "mport java.util.Scanner;",
-        "fixed_code": "import java.util.Scanner;"
+        "message": "PLAIN LANGUAGE: What's wrong and why it's a problem",
+        "original_code": "buggy line",
+        "fixed_code": "corrected line",
+        "explanation": "Simple explanation of what would happen at runtime"
+      }}
+    ],
+    "logic_errors": [
+      {{
+        "line": <number>,
+        "severity": "warning",
+        "message": "PLAIN LANGUAGE: What's wrong",
+        "original_code": "buggy code",
+        "fixed_code": "corrected code",
+        "explanation": "What error would occur when this code runs"
+      }}
+    ],
+    "runtime_errors": [
+      {{
+        "line": <number>,
+        "severity": "critical",
+        "message": "PLAIN LANGUAGE: What runtime error will occur",
+        "original_code": "buggy code",
+        "fixed_code": "corrected code",
+        "explanation": "Example: 'This will crash with IndexError because the list only has 3 items but you're trying to access item 5'"
       }}
     ]
   }},
-  "suggestions": ["Fix typo on line 1"],
-  "fixed_code": "import java.util.Scanner;\\n\\npublic class Calculator {{\\n    // corrected code\\n}}",
+  "suggestions": [
+    "PLAIN LANGUAGE suggestion 1",
+    "PLAIN LANGUAGE suggestion 2"
+  ],
+  "fixed_code": "COMPLETE corrected {prompt_language.upper()} code",
   "has_syntax_errors": true
 }}
 
-IMPORTANT:
-- Reply only with valid JSON. Do not add any markdown, explanation, or extra text.
-- fixed_code must be the COMPLETE corrected code
-- original_code and fixed_code must show EXACT lines
-- Be precise with fixes
+EXAMPLE OF PLAIN LANGUAGE EXPLANATIONS:
+- BAD: "IndexError on line 5"
+- GOOD: "Line 5 will crash because you're trying to access the 10th item in a list that only has 5 items"
 
-ANALYZE AND FIX NOW:"""
+- BAD: "Division by zero"
+- GOOD: "Line 8 will crash with 'ZeroDivisionError' because you're dividing by zero, which is mathematically impossible"
+
+- BAD: "Undefined variable"
+- GOOD: "Line 3 will crash with 'NameError' because you're using variable 'x' before creating it"
+
+CRITICAL RULES:
+- Return ONLY valid JSON (no markdown)
+- Apply {prompt_language.upper()} syntax rules ONLY
+- fixed_code must be complete, valid {prompt_language.upper()} code
+- Do NOT mix syntax from other languages
+- Be thorough - find ALL bugs
+
+ANALYZE THIS {prompt_language.upper()} CODE NOW:"""
         
         return prompt
     
